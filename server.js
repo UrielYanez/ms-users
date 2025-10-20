@@ -5,7 +5,12 @@ const { Pool } = require('pg');
 const app = express();
 const port = 3000;
 
+// Importar los módulos de rutas
+const usuariosRoutes = require('./routes/usuarios'); 
+const cvRoutes = require('./routes/cv');
+
 app.use(express.json());
+
 
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -19,6 +24,10 @@ const pool = new Pool({
     rejectUnauthorized: false 
   }
 });
+
+// Montar el módulo de rutas de usuarios bajo el prefijo /api/usuarios
+app.use('/api/usuarios', usuariosRoutes(pool)); // Se sigue pasando el pool aquí.
+app.use('/api/usuarios', cvRoutes(pool));
 
 // Prueba de Conexión
 app.get('/api/health', async (req, res) => {

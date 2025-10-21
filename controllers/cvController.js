@@ -13,73 +13,42 @@ const resetSequence = async (client, schema, table, column = 'id') => {
 const cvController = (pool) => ({
 
     /**
-     * GET: Obtiene el CV completo de un usuario (todas las secciones) con una sola petición.
+     * GET: Obtiene el CV completo de un usuario utilizando la función SQL.
      * Endpoint: /api/usuarios/:id/cv
      */
     obtenerCVCompleto: async (req, res) => {
         const { id } = req.params;
+        const userId = parseInt(id);
 
-        // 🚨 Validación simple del ID
-        if (!id || isNaN(parseInt(id))) {
+        if (!userId || isNaN(userId)) {
             return res.status(400).json({ error: 'ID de usuario inválido.' });
         }
 
-        const userId = parseInt(id);
-        const client = await pool.connect(); // Usar un cliente para ejecutar múltiples queries en paralelo
+        // 🚨 Llamada directa a la función SQL: usuarios.get_cv_perfil(ID)
+        const query = `SELECT usuarios.get_cv_perfil($1) as cv_data;`;
 
         try {
-            // Definición de las 5 consultas para las tablas del CV
-            const experienciaQuery = 'SELECT * FROM usuarios.experiencia_laboral WHERE id_usuario = $1 ORDER BY id DESC;';
-            const educacionQuery = 'SELECT * FROM usuarios.educacion WHERE id_usuario = $1 ORDER BY fecha_fin DESC;';
-            const cursosQuery = 'SELECT * FROM usuarios.cursos WHERE id_usuario = $1 ORDER BY id DESC;';
-            // Nota: Para las tablas de relación (muchos a muchos), se traen las FK.
-            const habilidadesQuery = 'SELECT * FROM usuarios.usuarios_habilidades WHERE id_usuario = $1 ORDER BY id_habilidad;';
-            const idiomasQuery = 'SELECT * FROM usuarios.usuarios_idiomas WHERE id_usuario = $1 ORDER BY id_idioma;';
+            const result = await pool.query(query, [userId]);
 
-            // Ejecutar todas las consultas en paralelo para mejorar el rendimiento
-            const [
-                experiencia,
-                educacion,
-                cursos,
-                habilidades,
-                idiomas
-            ] = await Promise.all([
-                client.query(experienciaQuery, [userId]),
-                client.query(educacionQuery, [userId]),
-                client.query(cursosQuery, [userId]),
-                client.query(habilidadesQuery, [userId]),
-                client.query(idiomasQuery, [userId])
-            ]);
+            // La base de datos devuelve un único registro con un campo JSON (cv_data)
+            if (result.rows.length === 0 || !result.rows[0].cv_data) {
+                return res.status(404).json({ error: 'Perfil de CV no encontrado para este usuario.' });
+            }
 
-            client.release(); // Liberar el cliente
-
-            // Responder con el objeto CV agregado
-            res.json({
-                id_usuario: userId,
-                experienciaLaboral: experiencia.rows,
-                educacion: educacion.rows,
-                cursos: cursos.rows,
-                habilidades: habilidades.rows,
-                idiomas: idiomas.rows
-            });
+            // Enviamos directamente el objeto JSON devuelto por la función
+            res.json(result.rows[0].cv_data);
 
         } catch (err) {
-            client.release();
-            console.error('Error al obtener CV completo:', err.message);
-            res.status(500).json({ error: 'Error interno al obtener datos del CV.', details: err.message });
+            console.error('Error al obtener CV con función SQL:', err.message);
+            res.status(500).json({ error: 'Error interno al obtener el perfil del CV.', details: err.message });
         }
     },
 
     /**
-     * PUT: Actualiza el CV completo (sincroniza las 5 tablas).
-     * 🚨 Implementa una Transacción: Si falla una sección, se revierte todo.
-     * Endpoint: /api/usuarios/:id/cv
-     */
-    /**
-     * PUT: Actualiza el CV completo (sincroniza las 5 tablas).
-     * 🚨 Implementa una Transacción: Si falla una sección, se revierte todo.
-     * Endpoint: /api/usuarios/:id/cv
-     */
+ * PUT: Actualiza el CV completo (sincroniza las 5 tablas).
+ * 🚨 Implementa una Transacción: Si falla una sección, se revierte todo.
+ * Endpoint: /api/usuarios/:id/cv
+ */
     actualizarCVCompleto: async (req, res) => {
         const { id } = req.params;
         const userId = parseInt(id);

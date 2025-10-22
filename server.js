@@ -10,7 +10,6 @@ const usuariosRoutes = require('./routes/usuarios');
 const cvRoutes = require('./routes/cv');
 
 app.use(express.json());
-app.use(cors());
 
 
 const pool = new Pool({

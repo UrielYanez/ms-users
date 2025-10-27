@@ -6,10 +6,12 @@ const { Pool } = require('pg');
 const app = express();
 const port = 3000;
 
+const router = express.Router({ mergeParams: true });
 // Importar los módulos de rutas
 const usuariosRoutes = require('./routes/usuarios'); 
 const cvRoutes = require('./routes/cv');
 const direccionRoutes = require('./routes/direccion');
+const postulacionesRoutes = require('./routes/postulaciones');
 
 app.use(express.json());
 app.use(cors());
@@ -29,10 +31,17 @@ const pool = new Pool({
 });
 
 // Montar el módulo de rutas de usuarios bajo el prefijo /api/usuarios
-app.use('/api/usuarios', usuariosRoutes(pool)); // Se sigue pasando el pool aquí.
-app.use('/api/usuarios', cvRoutes(pool));
-app.use('/api/direccion', direccionRoutes(pool));
+// Montaje de Rutas
+app.use('/api/direccion', direccionRoutes(pool)); 
 
+// Montar Rutas de Usuarios Base
+app.use('/api/usuarios', usuariosRoutes(pool)); 
+
+// Montar Rutas de CV
+app.use('/api/usuarios', cvRoutes(pool));      
+
+// 🚨 Montar Rutas de Postulaciones (usa el mismo prefijo que las otras)
+app.use('/api/usuarios', postulacionesRoutes(pool));
 // Prueba de Conexión
 app.get('/api/health', async (req, res) => {
   try {

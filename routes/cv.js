@@ -24,5 +24,6 @@ module.exports = (pool) => {
     // =================================================================
     router.put('/:id/cv', controller.actualizarCVCompleto);
 
+    router.get('/:id/cv/pdf', controller.descargarCVPDF);
     return router;
 };

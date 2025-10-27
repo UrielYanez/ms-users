@@ -1,4 +1,5 @@
 require('dotenv').config();
+const cors = require('cors');
 
 const express = require('express');
 const { Pool } = require('pg');
@@ -8,8 +9,10 @@ const port = 3000;
 // Importar los módulos de rutas
 const usuariosRoutes = require('./routes/usuarios'); 
 const cvRoutes = require('./routes/cv');
+const direccionRoutes = require('./routes/direccion');
 
 app.use(express.json());
+app.use(cors());
 
 
 const pool = new Pool({
@@ -28,6 +31,7 @@ const pool = new Pool({
 // Montar el módulo de rutas de usuarios bajo el prefijo /api/usuarios
 app.use('/api/usuarios', usuariosRoutes(pool)); // Se sigue pasando el pool aquí.
 app.use('/api/usuarios', cvRoutes(pool));
+app.use('/api/direccion', direccionRoutes(pool));
 
 // Prueba de Conexión
 app.get('/api/health', async (req, res) => {

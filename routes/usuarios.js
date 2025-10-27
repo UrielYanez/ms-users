@@ -21,6 +21,9 @@ module.exports = (pool) => {
     // GET /api/usuarios (READ All)
     router.get('/', controller.obtenerUsuarios);
 
+    // GET /api/usuarios/auth/:id_userAuth (READ Single by Auth ID)
+    router.get('/auth/:id_userAuth', controller.obtenerUsuarioPorAuthId);
+
     // GET /api/usuarios/:id (READ Single)
     router.get('/:id', controller.obtenerUsuarioPorId);
 
